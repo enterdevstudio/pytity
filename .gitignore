@@ -1,0 +1,7 @@
+*pyc
+
+# setup.py files
+*egg-info
+
+# test files
+.coverage
