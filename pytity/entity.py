@@ -58,3 +58,18 @@ class Entity(int):
 
         """
         return self.manager.get_component(self, component_type)
+
+    def del_component(self, component_type):
+        """Delete a component attach to the entity.
+
+        Entity must be attached to a manager to use this method. This method
+        is only a shortcut for manager.del_component(entity, component_type).
+
+        Args:
+          component_type (class): the type of the component to delete.
+
+        Raises:
+          AttributeError if manager has not been set.
+
+        """
+        self.manager.del_component(self, component_type)

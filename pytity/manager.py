@@ -265,6 +265,31 @@ class Manager(object):
 
         return self.entity_store[entity][component_type]
 
+    def del_component(self, entity, component_type):
+        """Delete a component attach to the given entity.
+
+        Args:
+          component_type (class): the type of the component to delete.
+
+        Examples:
+
+        >>> from pytity.component import Component
+        >>> m = Manager()
+        >>> e = m.create_entity()
+        >>> c = Component(42)
+        >>> m.add_component(e, c)
+        >>> m.del_component(e, Component)
+        >>> m.get_component(e, Component) is None
+        True
+
+        """
+        if entity not in self.entity_store or\
+                component_type not in self.entity_store[entity]:
+            return
+
+        self.component_store[component_type].remove(entity)
+        del self.entity_store[entity][component_type]
+
     def add_processor(self, processor):
         """Add a processor to the manager.
 
