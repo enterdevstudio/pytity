@@ -16,6 +16,23 @@ $ git checkout dev
 
 Then you can begin to hack. Have fun!
 
+## Generate the documentation
+
+Documentation can be extracted from source code. You need to install Sphinx before:
+
+```bash
+$ pip install sphinx
+```
+
+Then, you'll be able to generate documentation:
+
+```bash
+$ cd doc
+$ make html
+```
+
+Documentation should be available under `./doc/_build/html/index.html` now.
+
 ## Running tests
 
 Tests require, at least, pytest. To start them, you just have to run following command:
