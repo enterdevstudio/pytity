@@ -25,8 +25,8 @@ class Event(object):
         This method must be redifined by child classes.
 
         Args:
-          *args (mix): a variable number of arguments to call. See child
-                       classes to know which arguments are available.
+          args (mix): a variable number of arguments to call. See child
+          classes to know which arguments are available.
 
         Raises:
           NotImplementedError if method has not been implemented.

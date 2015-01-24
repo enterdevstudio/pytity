@@ -12,6 +12,8 @@
     - Add methods to handle event system (add_event, subscribe, push_event and publish)
 * Processor
     - Add a publish method
+* Improve the demo
+    - Add example of events
 
 ## 2015-01-22 pytity 0.1.0
 

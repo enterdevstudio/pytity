@@ -7,7 +7,6 @@ from pytity.entity import Entity
 
 class Manager(object):
     """Store and manage different objects of the entity system."""
-
     def __init__(self):
         self.component_store = {}
         self.processor_store = []
@@ -142,7 +141,7 @@ class Manager(object):
 
         Args:
           component_types (list of classes): is a list of component types to
-                                             filter.
+          filter.
 
         Returns:
           A generator of entities having the given component types.
@@ -190,7 +189,7 @@ class Manager(object):
 
         Args:
           component_type (class): the name of the component store to
-                                  initialize.
+          initialize.
 
         """
         if component_type not in self.component_store:
@@ -342,7 +341,7 @@ class Manager(object):
         Args:
           event_type (class): the event type to publish.
           args (list of mix): a list of additional arguments. They have to
-                              match with the call() method of the event.
+          match with the call() method of the event.
 
         Raises:
           ValueError if there is no subscribed event of type event_type.
@@ -354,16 +353,17 @@ class Manager(object):
         self.event_waiting_store.put((event_type, args))
 
     def publish(self):
-        """Publish events in the waiting list of events."""
+        """Publish events from the waiting list of events."""
         size = self.event_waiting_store.qsize()
         for i in xrange(size):
             event_type, args = self.event_waiting_store.get()
             self.event_store[event_type].call(*args)
 
     def update(self, delta):
-        """Call *update() methods on all the registered processors.
+        """Call ``update`` methods on all the registered processors.
 
-        For each processor, pre_update, update and post_update are called.
+        For each processor, ``pre_update``, ``update`` and ``post_update`` are
+        called.
 
         Args:
           delta (float): a delta of time since the last update call.
@@ -379,7 +379,7 @@ class Manager(object):
     def stop(self):
         """Stop the manager.
 
-        It is only a shortcut for self.is_running = False
+        It is only a shortcut for ``self.is_running = False``
 
         Example:
 

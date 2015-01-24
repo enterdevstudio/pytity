@@ -65,8 +65,8 @@ class Processor(object):
 
         Args:
           event_type (class): the event type to publish.
-          *args (mix): a list of additional arguments. They have to match with
-                       the call() method of the event.
+          args (mix): a list of additional arguments. They have to match with
+          the call() method of the event.
 
         """
         self.manager.push_event(event_type, args)
