@@ -57,6 +57,20 @@ class Processor(object):
         """Do something after calling update()."""
         pass
 
+    def publish(self, event_type, *args):
+        """Publish an event by registering it into the manager.
+
+        Publishing an event does not mean it will be executed immediately. The
+        manager is free to choose when calling it.
+
+        Args:
+          event_type (class): the event type to publish.
+          *args (mix): a list of additional arguments. They have to match with
+                       the call() method of the event.
+
+        """
+        self.manager.push_event(event_type, args)
+
 
 class EntityProcessor(Processor):
     """A helper class for processor which are called on a set of entities.

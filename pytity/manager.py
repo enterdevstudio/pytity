@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import Queue
+
 from pytity.entity import Entity
 
 
@@ -9,6 +11,8 @@ class Manager(object):
     def __init__(self):
         self.component_store = {}
         self.processor_store = []
+        self.event_store = {}
+        self.event_waiting_store = Queue.Queue()
         self.entity_store = {}
         self.created_entities = 0
 
@@ -309,6 +313,51 @@ class Manager(object):
         for processor in self.processor_store:
             yield processor
 
+    def add_event(self, event):
+        """An alias for subscribe().
+
+        This method is here to keep manager API consistent (add_processor,
+        add_component).
+
+        """
+        self.subscribe(event)
+
+    def subscribe(self, event):
+        """Subscribe an event to the manager.
+
+        Args:
+          event (Event): the event to add to the manager.
+
+        """
+        self.event_store[event.type] = event
+
+    def push_event(self, event_type, args):
+        """Push an event into the waiting list of events.
+
+        Waiting events will be called later by the publish() method. It is the
+        sole responsible of calling.
+
+        Args:
+          event_type (class): the event type to publish.
+          args (list of mix): a list of additional arguments. They have to
+                              match with the call() method of the event.
+
+        Raises:
+          ValueError if there is no subscribed event of type event_type.
+
+        """
+        if event_type not in self.event_store:
+            raise ValueError('{0} is not a subscriber'.format(event_type))
+
+        self.event_waiting_store.put((event_type, args))
+
+    def publish(self):
+        """Publish events in the waiting list of events."""
+        size = self.event_waiting_store.qsize()
+        for i in xrange(size):
+            event_type, args = self.event_waiting_store.get()
+            self.event_store[event_type].call(*args)
+
     def update(self, delta):
         """Call *update() methods on all the registered processors.
 
@@ -322,3 +371,5 @@ class Manager(object):
             processor.pre_update(delta)
             processor.update(delta)
             processor.post_update(delta)
+
+        self.publish()
