@@ -8,7 +8,7 @@ From [Entity Systems Wiki](http://entity-systems.wikidot.com/):
 
 It is aimed to provide an intuitive way of making video games.
 
-**Important note:** pytity has been designed for Python 2.7 only. If you're interested to port it to Python 3.x, please [do a pull request on Github](https://github.com/marienfressinaud/pytity). And please have a look to the [https://github.com/marienfressinaud/pytity/CONTRIBUTING.md](contributing file) before submitting your patch.
+**Important note:** pytity has been designed for Python 2.7 only. If you're interested to port it to Python 3.x, please [do a pull request on Github](https://github.com/marienfressinaud/pytity). And please have a look to the [contributing file](https://github.com/marienfressinaud/pytity/blob/master/CONTRIBUTING.md) before submitting your patch.
 
 **Second important note:** it is an amateur project! Don't expect high performances or good architecture design from pytity. If it matches your expectations, good for you, but this project will only evolve accordingly to my personal needs.
 
