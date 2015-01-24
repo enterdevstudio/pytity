@@ -16,8 +16,14 @@ import pygame
 
 from pytity.component import Component
 from pytity.processor import Processor, EntityProcessor
+from pytity.event import Event
 from pytity.manager import Manager
 
+
+GRAVITY = 200
+RADIUS = 24
+LOSS_Y = 0.90
+LOSS_X = 0.99
 
 is_running = True
 
@@ -67,6 +73,39 @@ class Look(Component):
     pass
 
 
+class Selected(Component):
+    """Define if an event has been selected."""
+    pass
+
+
+#
+# Event declarations
+#
+class SelectEntity(Event):
+    """An event to select an entity (with a position component)"""
+    def call(self, click_position):
+        for entity in self.manager.entities_by_type(Position):
+            position = entity.get_component(Position).value
+
+            x = position['x'] - RADIUS
+            y = position['y'] - RADIUS
+            width = RADIUS * 2
+            height = RADIUS * 2
+            rect = pygame.Rect((x, y, width, height))
+
+            if rect.collidepoint(click_position):
+                entity.add_component(Selected())
+
+
+class UnselectEntity(Event):
+    """An event to unselect an entity."""
+    def call(self, click_position):
+        # Note we should use a list here because we are removing Selected
+        # component while iterating on it!
+        for entity in list(self.manager.entities_by_type(Selected)):
+            entity.del_component(Selected)
+
+
 #
 # Processor (or System) declarations
 #
@@ -83,21 +122,24 @@ class Input(Processor):
             ):
                 global is_running
                 is_running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                 pos = pygame.mouse.get_pos()
                 create_ball(self.manager, {
                     'x': pos[0],
                     'y': self.screen_height - pos[1]
                 })
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                x, y = pygame.mouse.get_pos()
+                y = self.screen_height - y
+                self.publish(SelectEntity, (x, y))
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                x, y = pygame.mouse.get_pos()
+                y = self.screen_height - y
+                self.publish(UnselectEntity, (x, y))
 
 
 class Physic(EntityProcessor):
     """Handle physic in the world (considering gravity and world limits)."""
-
-    GRAVITY = 200
-    RADIUS = 24
-    LOSS_Y = 0.90
-    LOSS_X = 0.99
 
     def __init__(self, screen_size):
         EntityProcessor.__init__(self)
@@ -108,29 +150,55 @@ class Physic(EntityProcessor):
         self.needed = [Position, Speed]
 
     def update_entity(self, delta, entity):
+        selected = entity.get_component(Selected) is not None
+
+        # We use two behaviour for physic if the entity is selected or not.
+        if selected:
+            self.update_entity_mouse(delta, entity)
+        else:
+            self.update_entity_gravity(delta, entity)
+
+        self.update_entity_position(delta, entity)
+
+    def update_entity_mouse(self, delta, entity):
+        speed = entity.get_component(Speed)
+        position = entity.get_component(Position).value
+
+        click_x, click_y = pygame.mouse.get_pos()
+        click_y = self.screen_height - click_y
+
+        speed.value = {
+            'x': (click_x - position['x']) * 3,
+            'y': (click_y - position['y']) * 3,
+        }
+
+    def update_entity_gravity(self, delta, entity):
+        speed = entity.get_component(Speed)
+        speed.value['y'] += -GRAVITY * delta
+
+    def update_entity_position(self, delta, entity):
         position = entity.get_component(Position)
         speed = entity.get_component(Speed)
 
-        speed.value['y'] += -self.GRAVITY * delta
         position.value['x'] += speed.value['x'] * delta
         position.value['y'] += speed.value['y'] * delta
 
-        if position.value['y'] < self.RADIUS:
-            position.value['y'] = self.RADIUS
-            speed.value['y'] = -speed.value['y'] * self.LOSS_Y
+        if position.value['y'] < RADIUS:
+            position.value['y'] = RADIUS
+            speed.value['y'] = -speed.value['y'] * LOSS_Y
 
-        if position.value['x'] < self.RADIUS:
-            position.value['x'] = self.RADIUS
+        if position.value['x'] < RADIUS:
+            position.value['x'] = RADIUS
             speed.value['x'] = -speed.value['x']
 
-        if position.value['x'] > self.screen_width - self.RADIUS:
-            position.value['x'] = self.screen_width - self.RADIUS
+        if position.value['x'] > self.screen_width - RADIUS:
+            position.value['x'] = self.screen_width - RADIUS
             speed.value['x'] = -speed.value['x']
 
         # If the entity is nearly stopped on y axis, it's time to stop it on
         # x axis too.
-        if abs(speed.value['y']) <= 2 and position.value['y'] == self.RADIUS:
-            speed.value['x'] = speed.value['x'] * self.LOSS_X
+        if abs(speed.value['y']) <= 2 and position.value['y'] == RADIUS:
+            speed.value['x'] = speed.value['x'] * LOSS_X
 
 
 class Graphic(EntityProcessor):
@@ -230,6 +298,10 @@ def main():
     Physic((width, height)).register_to(manager)
     Graphic((width, height)).register_to(manager)
     Render(screen).register_to(manager)
+
+    # Add the events to the manager
+    SelectEntity().register_to(manager)
+    UnselectEntity().register_to(manager)
 
     # And start the big loop!
     clock = pygame.time.Clock()
