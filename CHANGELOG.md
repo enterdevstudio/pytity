@@ -14,6 +14,7 @@
     - Add a publish method
 * Improve the demo
     - Add example of events
+* Support doc generation through sphinx module (see [CONTRIBUTING file](CONTRIBUTING.md))
 
 ## 2015-01-22 pytity 0.1.0
 
