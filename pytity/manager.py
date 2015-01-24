@@ -254,14 +254,14 @@ class Manager(object):
         >>> e = m.create_entity()
         >>> c = Component(42)
         >>> m.add_component(e, c)
-        >>> c_get = m.get_component(e, c.type)
+        >>> c_get = m.get_component(e, Component)
         >>> c_get.value
         42
 
         >>> m = Manager()
         >>> e = m.create_entity()
         >>> c = Component(1)
-        >>> m.get_component(e, c.type) is None
+        >>> m.get_component(e, Component) is None
         True
 
         """
