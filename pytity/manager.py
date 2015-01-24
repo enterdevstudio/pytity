@@ -5,7 +5,6 @@ from pytity.entity import Entity
 
 class Manager(object):
     """Store and manage different objects of the entity system."""
-
     def __init__(self):
         self.component_store = {}
         self.processor_store = []
@@ -136,7 +135,7 @@ class Manager(object):
 
         Args:
           component_types (list of classes): is a list of component types to
-                                             filter.
+          filter.
 
         Returns:
           A generator of entities having the given component types.
@@ -184,7 +183,7 @@ class Manager(object):
 
         Args:
           component_type (class): the name of the component store to
-                                  initialize.
+          initialize.
 
         """
         if component_type not in self.component_store:
@@ -248,14 +247,14 @@ class Manager(object):
         >>> e = m.create_entity()
         >>> c = Component(42)
         >>> m.add_component(e, c)
-        >>> c_get = m.get_component(e, c.type)
+        >>> c_get = m.get_component(e, Component)
         >>> c_get.value
         42
 
         >>> m = Manager()
         >>> e = m.create_entity()
         >>> c = Component(1)
-        >>> m.get_component(e, c.type) is None
+        >>> m.get_component(e, Component) is None
         True
 
         """
@@ -285,9 +284,10 @@ class Manager(object):
             yield processor
 
     def update(self, delta):
-        """Call *update() methods on all the registered processors.
+        """Call ``update`` methods on all the registered processors.
 
-        For each processor, pre_update, update and post_update are called.
+        For each processor, ``pre_update``, ``update`` and ``post_update`` are
+        called.
 
         Args:
           delta (float): a delta of time since the last update call.
