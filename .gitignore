@@ -2,6 +2,8 @@
 
 # setup.py files
 *egg-info
+build
+dist
 
 # test files
 .coverage
