@@ -6,6 +6,9 @@ class Component(object):
 
     It must be the base class for all the different Components.
 
+    Args:
+      value (mix): the value to attribute to the compenent (default: None)
+
     Examples:
 
     >>> c = Component(42)
@@ -18,6 +21,6 @@ class Component(object):
 
     """
 
-    def __init__(self, value):
+    def __init__(self, value=None):
         self.value = value
         self.type = self.__class__
