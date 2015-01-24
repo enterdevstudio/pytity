@@ -16,6 +16,8 @@ class Manager(object):
         self.entity_store = {}
         self.created_entities = 0
 
+        self.is_running = True
+
     def create_entity(self):
         """Create, store and return an entity.
 
@@ -373,3 +375,20 @@ class Manager(object):
             processor.post_update(delta)
 
         self.publish()
+
+    def stop(self):
+        """Stop the manager.
+
+        It is only a shortcut for self.is_running = False
+
+        Example:
+
+        >>> m = Manager()
+        >>> m.is_running
+        True
+        >>> m.stop()
+        >>> m.is_running
+        False
+
+        """
+        self.is_running = False
