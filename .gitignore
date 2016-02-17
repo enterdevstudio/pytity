@@ -1,7 +1,10 @@
+__pycache__
 *pyc
 
 # setup.py files
 *egg-info
+.eggs
+.cache
 
 # test files
 .coverage
