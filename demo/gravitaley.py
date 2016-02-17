@@ -16,230 +16,145 @@ import os
 import random
 
 import pygame
+pygame.init()
 
-from pytity.component import Component
-from pytity.processor import Processor, EntityProcessor
-from pytity.manager import Manager
+from pytity import Manager
 
+
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+GRAVITY = 200
+RADIUS = 24
+LOSS_Y = 0.90
+LOSS_X = 0.99
+
+IMAGE_FILENAME = os.path.join('data', 'face.png')
+IMAGE = pygame.image.load(IMAGE_FILENAME).convert_alpha()
 
 is_running = True
 
 
-#
-# Component declarations
-#
-class Position(Component):
-    """Define the position of an entity in the world.
-
-    Position consists in two float: x and y.
-
-    """
-    pass
-
-
-class Speed(Component):
-    """Define the speed of an entity in the world.
-
-    Speed consists in two float: x and y.
-
-    """
-    pass
-
-
-class Coordinate(Component):
-    """Define coordinates of an entity on the screen.
-
-    Coordinate consists in two float: x and y.
-
-    """
-    pass
-
-
-class Look(Component):
-    """Define the look of an entity
-
-    Look consists in three values:
-
-    - image: a Pygame Surface
-    - width: the image width
-    - height: the image height
-
-    Two last values can also being find using image.get_width|height().
-
-    """
-    pass
-
-
-#
-# Processor (or System) declarations
-#
-class Input(Processor):
-    """Handle input systems (mouse and keyboard)."""
-    def __init__(self, screen_size):
-        Processor.__init__(self)
-        self.screen_width, self.screen_height = screen_size
-
-    def update(self, delta):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT or (
-                event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
-            ):
-                global is_running
-                is_running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                pos = pygame.mouse.get_pos()
-                create_ball(self.manager, {
+def user_interaction(manager, delta):
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT or (
+            event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+        ):
+            global is_running
+            is_running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            manager.publish({
+                'type': 'CREATE_SMILEY',
+                'position': {
                     'x': pos[0],
-                    'y': self.screen_height - pos[1]
-                })
+                    'y': SCREEN_HEIGHT - pos[1]
+                }
+            })
 
+def physic(manager, delta):
+    for smiley in manager.entities_by_types(['position', 'speed']):
+        position = manager.get_component(smiley, 'position')
+        speed = manager.get_component(smiley, 'speed')
 
-class Physic(EntityProcessor):
-    """Handle physic in the world (considering gravity and world limits)."""
+        next_position_x, next_position_y = position['x'], position['y']
+        next_speed_x, next_speed_y = speed['x'], speed['y']
 
-    GRAVITY = 200
-    RADIUS = 24
-    LOSS_Y = 0.90
-    LOSS_X = 0.99
+        next_speed_y += -GRAVITY * delta
+        next_position_x += speed['x'] * delta
+        next_position_y += speed['y'] * delta
 
-    def __init__(self, screen_size):
-        EntityProcessor.__init__(self)
-        self.screen_width, self.screen_height = screen_size
-        # Note this processor only need Position and Speed so we ask for
-        # entities which contain these components. In this demo, there are only
-        # balls so all the entities are returned each time.
-        self.needed = [Position, Speed]
+        if next_position_y < RADIUS:
+            next_position_y = RADIUS
+            next_speed_y = -speed['y'] * LOSS_Y
 
-    def update_entity(self, delta, entity):
-        position = entity.get_component(Position)
-        speed = entity.get_component(Speed)
+        if next_position_x < RADIUS:
+            next_position_x = RADIUS
+            next_speed_x = -speed['x']
 
-        speed.value['y'] += -self.GRAVITY * delta
-        position.value['x'] += speed.value['x'] * delta
-        position.value['y'] += speed.value['y'] * delta
+        if next_position_x > SCREEN_WIDTH - RADIUS:
+            next_position_x = SCREEN_WIDTH - RADIUS
+            next_speed_x = -speed['x']
 
-        if position.value['y'] < self.RADIUS:
-            position.value['y'] = self.RADIUS
-            speed.value['y'] = -speed.value['y'] * self.LOSS_Y
-
-        if position.value['x'] < self.RADIUS:
-            position.value['x'] = self.RADIUS
-            speed.value['x'] = -speed.value['x']
-
-        if position.value['x'] > self.screen_width - self.RADIUS:
-            position.value['x'] = self.screen_width - self.RADIUS
-            speed.value['x'] = -speed.value['x']
-
-        # If the entity is nearly stopped on y axis, it's time to stop it on
-        # x axis too.
-        if abs(speed.value['y']) <= 2 and position.value['y'] == self.RADIUS:
-            speed.value['x'] = speed.value['x'] * self.LOSS_X
-
-
-class Graphic(EntityProcessor):
-    """Handle position translation on the screen."""
-    def __init__(self, screen_size):
-        EntityProcessor.__init__(self)
-        self.screen_width, self.screen_height = screen_size
-        self.needed = [Position, Coordinate]
-
-    def update_entity(self, delta, entity):
-        position = entity.get_component(Position)
-        coords = entity.get_component(Coordinate)
-
-        # Only y axis is reversed between position and coordinate systems.
-        coords.value['x'] = position.value['x']
-        coords.value['y'] = self.screen_height - position.value['y']
-
-
-class Render(EntityProcessor):
-    """Show entities on the screen."""
-    def __init__(self, screen):
-        EntityProcessor.__init__(self)
-        self.screen = screen
-        self.needed = [Coordinate, Look]
-
-    def pre_update(self, delta):
-        # Before showing balls, we paint the screen in black (paint it black!)
-        self.screen.fill((0, 0, 0))
-
-    def update_entity(self, delta, entity):
-        # Just find coordinates, the look and show the image on the screen.
-        coords = entity.get_component(Coordinate)
-        look = entity.get_component(Look)
-
-        width = look.value['width']
-        height = look.value['height']
-        x = coords.value['x'] - width / 2
-        y = coords.value['y'] - height / 2
-        rect = pygame.Rect(x, y, width, height)
-
-        self.screen.blit(look.value['image'], rect)
-
-    def post_update(self, delta):
-        # And finish by showing the new screen!
-        pygame.display.flip()
-
-
-#
-# "Archetype" declaration
-# Note there is not this kind of concept in pytity yet.
-#
-def create_ball(manager, position):
-    """This function create a ball in the world.
-
-    A ball is an entity with a position, a speed, coordinates on the screen
-    and an appearance (a smiley image!).
-
-    """
-    entity = manager.create_entity()
-
-    entity.add_component(Position(position))
-    entity.add_component(Speed({
-        'x': random.uniform(-500, 500),
-        'y': random.uniform(-500, 500)
-    }))
-    entity.add_component(Coordinate({
-        'x': 0,
-        'y': 0
-    }))
-
-    filename = os.path.join('data', 'face.png')
-    image = pygame.image.load(filename).convert_alpha()
-    entity.add_component(Look({
-        'image': image,
-        'width': image.get_width(),
-        'height': image.get_height(),
-    }))
-
-
-def main():
-    # Init Pygame
-    width, height = 800, 600
-    pygame.init()
-    screen = pygame.display.set_mode((width, height))
-
-    # Create a manager and balls (balls are smiley images)
-    manager = Manager()
-    number_balls = random.randint(1, 20)
-    for i in range(number_balls):
-        create_ball(manager, {
-            'x': random.randint(0, width),
-            'y': random.randint(0, height)
+        manager.publish({
+            'type': 'SMILEY_MOVEMENT',
+            'smiley': smiley,
+            'position': {
+                'x': next_position_x,
+                'y': next_position_y
+            },
+            'speed': {
+                'x': next_speed_x,
+                'y': next_speed_y
+            },
         })
 
+
+def rendering(manager, delta):
+    SCREEN.fill((0, 0, 0))
+    for smiley in manager.entities_by_types(['position', 'look']):
+        position = manager.get_component(smiley, 'position')
+        look = manager.get_component(smiley, 'look')
+        coords = {
+            'x': position['x'],
+            'y': SCREEN_HEIGHT - position['y'],
+        }
+
+        x = coords['x'] - look['width'] / 2
+        y = coords['y'] - look['height'] / 2
+        rect = pygame.Rect(x, y, look['width'], look['height'])
+
+        SCREEN.blit(look['image'], rect)
+
+    pygame.display.flip()
+
+
+def smiley_creator(manager, action):
+    smiley = manager.create_entity()
+
+    manager.set_component(smiley, 'position', action['position'])
+    manager.set_component(smiley, 'speed', {
+        'x': random.uniform(-500, 500),
+        'y': random.uniform(-500, 500)
+    })
+    manager.set_component(smiley, 'look', {
+        'image': IMAGE,
+        'width': IMAGE.get_width(),
+        'height': IMAGE.get_height(),
+    })
+
+
+def smiley_mover(manager, action):
+    smiley = action['smiley']
+    manager.set_component(smiley, 'position', action['position'])
+    manager.set_component(smiley, 'speed', action['speed'])
+
+
+if __name__ == '__main__':
+    # Create a manager and balls (balls are smiley images)
+    manager = Manager()
+
     # Add the processors (or systems) to the manager
-    Input((width, height)).register_to(manager)
-    Physic((width, height)).register_to(manager)
-    Graphic((width, height)).register_to(manager)
-    Render(screen).register_to(manager)
+    manager.register_processor(user_interaction)
+    manager.register_processor(physic)
+    manager.register_processor(rendering)
+
+    manager.register_mutator_on('CREATE_SMILEY', smiley_creator)
+    manager.register_mutator_on('SMILEY_MOVEMENT', smiley_mover)
+
+    number_smileys = random.randint(1, 20)
+    for i in range(number_smileys):
+        manager.publish({
+            'type': 'CREATE_SMILEY',
+            'position': {
+                'x': random.randint(0, SCREEN_WIDTH),
+                'y': random.randint(0, SCREEN_HEIGHT)
+            }
+        })
 
     # And start the big loop!
     clock = pygame.time.Clock()
     while is_running:
         delay = clock.tick(60)
         manager.update(float(delay) / 1000)
-
-
-if __name__ == '__main__':
-    main()
+        manager.mutate()

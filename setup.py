@@ -39,8 +39,8 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 2 :: Only'
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3 :: Only'
     ],
     extras_require={
         'testing': ['pytest'],
