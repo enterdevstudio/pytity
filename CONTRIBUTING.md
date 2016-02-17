@@ -21,7 +21,7 @@ Then you can begin to hack. Have fun!
 Tests require, at least, pytest. To start them, you just have to run following command:
 
 ```bash
-$ python2 setup.py test
+$ python3 setup.py test
 ```
 
 Pytest will find and run tests under `./tests` directory in addition of doctests in Docstrings.

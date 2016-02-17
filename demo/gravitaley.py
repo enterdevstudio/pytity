@@ -222,7 +222,7 @@ def main():
     # Create a manager and balls (balls are smiley images)
     manager = Manager()
     number_balls = random.randint(1, 20)
-    for i in xrange(number_balls):
+    for i in range(number_balls):
         create_ball(manager, {
             'x': random.randint(0, width),
             'y': random.randint(0, height)
