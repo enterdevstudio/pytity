@@ -9,6 +9,9 @@ https://github.com/jube/libes
 
 """
 
+import sys
+sys.path.insert(1, '..')
+
 import os
 import random
 
